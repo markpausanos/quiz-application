@@ -1,103 +1,351 @@
-import Image from "next/image";
+"use client";
+
+import { AppSidebar } from "@/components/home/app-sidebar";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Question, QuestionChoice, QuestionType } from "@/lib/types";
+import { getAlphabetByOrder } from "@/lib/utils";
+import { useQuestionStore } from "@/stores/question-store";
+
+import { ArrowLeft, ArrowRight, BookOpenCheck, RotateCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const {
+    questions,
+    setQuestions,
+    getAnsweredQuestions,
+    timer,
+    startTimer,
+    updateQuestion,
+    isOnBreak,
+    stopBreak,
+    stopTimer,
+  } = useQuestionStore();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentQuestionOrder, setCurrentQuestionOrder] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(
+    questions[currentQuestionOrder],
+  );
+
+  const getProgress = () => {
+    const answeredQuestions = getAnsweredQuestions();
+    const totalQuestions = questions.length;
+
+    return (answeredQuestions.length / totalQuestions) * 100;
+  };
+
+  const formatTime = (time: number) => {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = time % 60;
+
+    // Pad with 0 if less than 10
+    const pad = (num: number) => (num < 10 ? `0${num}` : num);
+
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  };
+
+  const handleChangeQuestion = (order: number) => {
+    if (order < 0 || order >= questions.length) return;
+
+    setCurrentQuestionOrder(order);
+    setCurrentQuestion(questions[order]);
+  };
+
+  const handleResetAnswer = () => {
+    const resetChoices = currentQuestion.choices.map((opt) => ({
+      ...opt,
+      isSelected: false,
+    }));
+
+    const updatedQuestion: Question = {
+      ...currentQuestion,
+      choices: resetChoices,
+      isAnswered: false,
+    };
+
+    updateQuestion(currentQuestion.order, updatedQuestion);
+    setCurrentQuestion(updatedQuestion);
+  };
+
+  const handleAnswerChange = (selectedChoice: string) => {
+    const updatedQuestion: Question = {
+      ...currentQuestion,
+      choices: currentQuestion.choices.map((choice) => ({
+        ...choice,
+        isSelected: choice.choice === selectedChoice,
+      })),
+      isAnswered: selectedChoice !== "",
+    };
+
+    setQuestions(
+      questions.map((question) => {
+        if (question.order === currentQuestion.order) {
+          return updatedQuestion;
+        }
+        return question;
+      }),
+    );
+    updateQuestion(currentQuestion.order, updatedQuestion);
+    setCurrentQuestion(updatedQuestion);
+  };
+
+  const handleReviewLater = (reviewLater: boolean) => {
+    const updatedQuestion: Question = {
+      ...currentQuestion,
+      reviewLater: reviewLater,
+    };
+
+    setQuestions(
+      questions.map((question) => {
+        if (question.order === currentQuestion.order) {
+          return updatedQuestion;
+        }
+        return question;
+      }),
+    );
+    updateQuestion(currentQuestion.order, updatedQuestion);
+    setCurrentQuestion(updatedQuestion);
+  };
+
+  const handleMultipleAnswerChange = (choice: string, checked: boolean) => {
+    const updatedChoices: QuestionChoice[] = currentQuestion.choices.map(
+      (opt) => (opt.choice === choice ? { ...opt, isSelected: checked } : opt),
+    );
+
+    const updatedQuestion: Question = {
+      ...currentQuestion,
+      choices: updatedChoices,
+      isAnswered: updatedChoices.some((opt) => opt.isSelected),
+    };
+
+    updateQuestion(currentQuestion.order, updatedQuestion);
+    setCurrentQuestion(updatedQuestion);
+  };
+
+  const handleLeaveFeedback = (feedback: boolean) => {
+    const updatedQuestion: Question = {
+      ...currentQuestion,
+      leaveFeedback: feedback,
+    };
+
+    setQuestions(
+      questions.map((question) => {
+        if (question.order === currentQuestion.order) {
+          return updatedQuestion;
+        }
+        return question;
+      }),
+    );
+    updateQuestion(currentQuestion.order, updatedQuestion);
+    setCurrentQuestion(updatedQuestion);
+  };
+
+  const handleSubmit = () => {
+    stopTimer();
+    router.push("/review"); // Redirect to review page
+  };
+
+  useEffect(() => {
+    startTimer();
+  }, []);
+
+  return (
+    <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+      <AppSidebar
+        questions={questions}
+        handleChangeQuestion={handleChangeQuestion}
+      />
+      <main className="flex w-full flex-col justify-between p-2">
+        <SidebarTrigger />
+        <div className="flex w-full flex-row items-center justify-between p-4">
+          <h2 className="font-bold">Question {currentQuestionOrder + 1}</h2>
+          <div className="flex flex-col text-center">
+            <div className="flex flex-row space-x-2">
+              <p className="hidden md:block">Exam Question Progress</p>
+              <p>
+                ({getAnsweredQuestions().length}/{questions.length})
+              </p>
+            </div>
+            <Progress value={getProgress()} />
+          </div>
+          <div className="flex flex-col text-center">
+            <p className="hidden md:block">Time Remaining</p>
+            <p>{formatTime(timer)}</p>
+          </div>
+        </div>
+
+        <div className="m-4 flex h-full flex-col gap-y-4 rounded-lg border p-4">
+          <p>{currentQuestion.question}</p>
+
+          {currentQuestion.type === QuestionType.MultipleChoice && (
+            <RadioGroup
+              className="flex flex-col gap-y-4"
+              value={
+                currentQuestion.choices.find((option) => option.isSelected)
+                  ?.choice || ""
+              }
+              onValueChange={handleAnswerChange}
+            >
+              {currentQuestion.choices.map((option, index) => (
+                <div
+                  key={`${currentQuestionOrder}-option-${index}`}
+                  className="flex items-center space-x-2"
+                >
+                  <RadioGroupItem
+                    value={option.choice}
+                    id={option.choice}
+                    className="cursor-pointer"
+                  />
+                  <Label htmlFor={option.choice}>
+                    {getAlphabetByOrder(index + 1)}. {option.choice}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
+
+          {currentQuestion.type === QuestionType.MultipleAnswer && (
+            <div className="flex flex-col gap-y-4">
+              {currentQuestion.choices.map((option, index) => (
+                <div
+                  key={`${currentQuestionOrder}-option-${index}`}
+                  className="flex items-center space-x-2"
+                >
+                  <Checkbox
+                    id={option.choice}
+                    checked={option.isSelected}
+                    onCheckedChange={(checked: boolean) =>
+                      handleMultipleAnswerChange(option.choice, checked)
+                    }
+                    className="cursor-pointer"
+                  />
+                  <Label htmlFor={option.choice}>
+                    {getAlphabetByOrder(index + 1)}. {option.choice}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Reset answer button */}
+          <Button onClick={handleResetAnswer} className="flex w-fit flex-row">
+            <RotateCcw />
+            <h2>Reset Answer</h2>
+          </Button>
+          <div className="flex flex-row items-center space-x-8">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="reviewLater"
+                checked={currentQuestion.reviewLater}
+                onCheckedChange={handleReviewLater}
+              />
+              <label
+                htmlFor="reviewLater"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Review Later
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="reviewLater"
+                checked={currentQuestion.leaveFeedback}
+                onCheckedChange={handleLeaveFeedback}
+              />
+              <label
+                htmlFor="reviewLater"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Leave Feedback
+              </label>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-between gap-y-4 p-4 md:flex-row">
+          <div className="flex flex-row items-center space-x-2">
+            <Button
+              disabled={currentQuestionOrder === 0}
+              onClick={() => handleChangeQuestion(currentQuestionOrder - 1)}
+              className="flex cursor-pointer flex-row md:min-w-48"
+            >
+              <ArrowLeft />
+              <h2 className="w-full">Previous</h2>
+            </Button>
+            <Button
+              disabled={currentQuestionOrder === questions.length - 1}
+              onClick={() => handleChangeQuestion(currentQuestionOrder + 1)}
+              className="flex cursor-pointer flex-row md:min-w-48"
+            >
+              <h2 className="w-full">Next</h2>
+              <ArrowRight />
+            </Button>
+          </div>
+          {getAnsweredQuestions().length === questions.length && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-primary flex cursor-pointer flex-row md:min-w-48">
+                  <BookOpenCheck />
+                  <h2 className="w-full">Submit</h2>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Are you absolutely sure?</DialogTitle>
+                  <DialogDescription>
+                    This will submit your answers and you won&apos;t be able to
+                    change them.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <Button
+                  onClick={handleSubmit}
+                  type="submit"
+                  className="bg-primary"
+                >
+                  Submit
+                </Button>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+      <Dialog open={isOnBreak}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>You are on a break</DialogTitle>
+            <DialogDescription>
+              You can start the exam again by clicking the button below.
+            </DialogDescription>
+          </DialogHeader>
+          <Button
+            onClick={() => {
+              stopBreak();
+            }}
+            className="bg-primary"
+          >
+            Start Exam
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
   );
 }
