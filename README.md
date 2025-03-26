@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quiz Application
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This is a **React-based quiz application** built with **Next.js**. The app supports both **single-choice and multiple-choice** questions and allows users to review their answers before submitting.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+- 📝 **Single and multiple-choice questions**
+- 🎯 **Answer validation** (multiple-answer questions require all correct answers selected)
+- 📊 **Progress tracking**
+- 🏆 **Score calculation**
+- 🔄 **Navigation between questions**
+- 📱 **PWA support** (for Android compatibility)
+
+## Setup Instructions
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+- **Node.js** (v18 or later recommended)
+- **pnpm** (or npm/yarn)
+
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-repo/quiz-app.git
+   cd quiz-app
+   ```
+2. Install dependencies:
+   ```sh
+   pnpm install  # or `npm install` / `yarn install`
+   ```
+
+## Running the Application
+
+### Development Mode
+
+```sh
+pnpm dev  # or `npm run dev` / `yarn dev`
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This starts the app in development mode, accessible at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Mode
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Build the application:
+   ```sh
+   pnpm build  # or `npm run build` / `yarn build`
+   ```
+2. Start the production server:
+   ```sh
+   pnpm start  # or `npm run start` / `yarn start`
+   ```
 
-## Learn More
+## PWA Support
 
-To learn more about Next.js, take a look at the following resources:
+To enable **PWA functionality**:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Ensure you have added the `next-pwa` plugin in `next.config.js`.
+2. The service worker will be generated during the build process.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Dependencies
 
-## Deploy on Vercel
+### Main Dependencies:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Next.js** - React framework for server-side rendering.
+- **TypeScript** - Type safety for improved development experience.
+- **ShadCN** - UI components for accessibility and customization.
+- **Zustand** - State management for React applications.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Dev Dependencies:
+
+- **ESLint** - Linting for code quality.
+- **Prettier** - Code formatting.
+
+## Contribution
+
+Feel free to **fork** the repository and submit a pull request for improvements or bug fixes. 🚀
